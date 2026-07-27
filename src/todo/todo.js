@@ -20,6 +20,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import CustomDeleteModal from "../common/deleteModal";
+import EditTextModal from "../common/editTextModal";
 
 function App() {
   const [todos, setTodos] = useState(() => {
@@ -84,6 +85,7 @@ function App() {
 
   // Custom delete modal
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(null);
   useEffect(() => {
     try {
       // Save todos to localStorage whenever they change
@@ -168,11 +170,8 @@ function App() {
                 <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
                   <MenuItem
                     onClick={() => {
-                      const newText = prompt("Edit Todo", selectedTodo?.text);
-
-                      if (newText !== null && newText.trim() !== "") {
-                        editTodo(selectedTodo?.id, newText);
-                      }
+                      setEditModalOpen(selectedTodo);
+                      setAnchorEl(null);
                     }}
                   >
                     <ListItemIcon>
@@ -216,11 +215,8 @@ function App() {
           <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
             <MenuItem
               onClick={() => {
-                const newText = prompt("Edit Todo", selectedTodo?.text);
-
-                if (newText !== null && newText.trim() !== "") {
-                  editTodo(selectedTodo?.id, newText);
-                }
+                setEditModalOpen(selectedTodo);
+                setAnchorEl(null);
               }}
             >
               <ListItemIcon>
@@ -272,6 +268,17 @@ function App() {
         }}
         loading={false}
         type="Delete"
+      />
+      <EditTextModal
+        open={Boolean(editModalOpen)}
+        title="Edit Todo"
+        label="Todo text"
+        initialValue={editModalOpen?.text ?? ""}
+        onClose={() => setEditModalOpen(null)}
+        onSave={(newText) => {
+          editTodo(editModalOpen?.id, newText);
+          setEditModalOpen(null);
+        }}
       />
     </>
   );
