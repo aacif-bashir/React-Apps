@@ -3,6 +3,7 @@ import {
   Button,
   Container,
   IconButton,
+  InputAdornment,
   List,
   ListItem,
   ListItemIcon,
@@ -21,6 +22,8 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import CustomDeleteModal from "../common/deleteModal";
 import EditTextModal from "../common/editTextModal";
+import ClearIcon from "@mui/icons-material/Clear";
+import useDebouncer from "../common/useDebouncer";
 
 function App() {
   const [todos, setTodos] = useState(() => {
@@ -96,6 +99,28 @@ function App() {
     }
   }, [todos]);
 
+  // Search functionality
+  // using debouncer to delay the search query update to avoid excessive filtering on every keystroke
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebouncer(searchQuery, 300); // 300ms delay
+
+  const filteredTodos = todos.filter(
+    (
+      todo, // use filteredTodos instead of todos in the map function to display only the filtered todos based on the search query
+    ) => todo.text.toLowerCase().includes(debouncedSearchQuery.toLowerCase()),
+  );
+  const clearSearch = () => {
+    setSearchQuery("");
+  };
+  // pagination logic
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5; // Number of todos per page
+  const totalPages = Math.ceil(filteredTodos.length / pageSize);
+
+  const startIndex = (currentPage - 1) * pageSize;
+  const lastIndex = startIndex + pageSize;
+  const currentTodos = filteredTodos.slice(startIndex, lastIndex);
+
   return (
     <>
       <Container maxWidth="sm" sx={{ mt: 5 }}>
@@ -132,8 +157,39 @@ function App() {
               Add
             </Button>
           </Stack>
+          <div style={{ marginTop: "16px", position: "relative" }}>
+            <TextField
+              fullWidth
+              placeholder="Search todos..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{
+                "& .MuiInputBase-root": {
+                  paddingRight: searchQuery ? "48px" : "14px",
+                },
+              }}
+            />
+            {searchQuery && (
+              <IconButton
+                onClick={clearSearch}
+                sx={{
+                  position: "absolute",
+                  right: 8,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "text.secondary",
+                  "&:hover": {
+                    color: "error.main",
+                  },
+                }}
+                size="small"
+              >
+                <ClearIcon />
+              </IconButton>
+            )}
+          </div>
           <List>
-            {todos.map((todo) => (
+            {currentTodos.map((todo) => (
               <Paper
                 key={todo.id}
                 elevation={2}
@@ -210,7 +266,41 @@ function App() {
                 </Menu>
               </Paper>
             ))}
+            <div style={{ textAlign: "center", marginTop: "16px" }}>
+              {filteredTodos.length === 0 && (
+                <Typography variant="body1" color="text.secondary">
+                  No todos found.
+                </Typography>
+              )}
+            </div>
           </List>
+          {filteredTodos.length > 0 && (
+            <Stack direction="row" spacing={2} mt={4} alignItems="center">
+              <Button
+                variant="contained"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => prev - 1)}
+              >
+                Previous
+              </Button>
+
+              <Typography>
+                Page {currentPage} of {totalPages}
+              </Typography>
+
+              <Button
+                variant="contained"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+              >
+                Next
+              </Button>
+
+              <Typography sx={{ ml: "auto" }}>
+                Total Todos: {filteredTodos.length}
+              </Typography>
+            </Stack>
+          )}
           {/* Render a single Menu outside the list instead of creating one Menu for each todo.  */}
           <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
             <MenuItem
